@@ -2,6 +2,10 @@ $(document).ready(function () {
 
     eel.init()()
 
+    $("#StopBtn").click(function () {
+    eel.stopSpeaking()
+    });
+
     $('.text').textillate({
         loop: true,
         sync: true,
@@ -13,6 +17,20 @@ $(document).ready(function () {
         },
 
     });
+
+    eel.expose(ShowSiriWave);
+    function ShowSiriWave() {
+        $("#Oval").attr("hidden", true);
+        $("#SiriWave").attr("hidden", false);
+        $("#StopBtn").show();
+    }
+
+    eel.expose(ShowHood);
+    function ShowHood() {
+        $("#SiriWave").attr("hidden", true);
+        $("#Oval").attr("hidden", false);
+        $("#StopBtn").hide();
+    }
 
     // Siri configuration
     var siriWave = new SiriWave({
@@ -46,7 +64,7 @@ $(document).ready(function () {
         eel.playAssistantSound()
         $("#Oval").attr("hidden", true);
         $("#SiriWave").attr("hidden", false);
-        eel.allCommands()()
+        eel.allCommands(1)
     });
 
 
@@ -57,26 +75,30 @@ $(document).ready(function () {
             eel.playAssistantSound()
             $("#Oval").attr("hidden", true);
             $("#SiriWave").attr("hidden", false);
-            eel.allCommands()()
+            eel.allCommands(1)
         }
     }
     document.addEventListener('keyup', doc_keyUp, false);
 
     // to play assisatnt 
-    function PlayAssistant(message) {
+function PlayAssistant(message) {
 
-        if (message != "") {
+    if (message != "") {
 
-            $("#Oval").attr("hidden", true);
-            $("#SiriWave").attr("hidden", false);
-            eel.allCommands(message);
-            $("#chatbox").val("")
-            $("#MicBtn").attr('hidden', false);
-            $("#SendBtn").attr('hidden', true);
+        $("#Oval").attr("hidden", true);
+        $("#SiriWave").attr("hidden", false);
 
-        }
+        eel.allCommands(message)(function() {
+            $("#SiriWave").attr("hidden", true);
+            $("#Oval").attr("hidden", false);
+        });
+
+        $("#chatbox").val("")
+        $("#MicBtn").attr('hidden', false);
+        $("#SendBtn").attr('hidden', true);
 
     }
+}
 
     // toogle fucntion to hide and display mic and send button 
     function ShowHideButton(message) {

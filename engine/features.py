@@ -1,6 +1,7 @@
+from datetime import datetime
 import json
 import os
-from pipes import quote
+from urllib.parse import quote
 import re
 import sqlite3
 import struct
@@ -13,6 +14,9 @@ import pyaudio
 import pyautogui
 from engine.command import speak
 from engine.config import ASSISTANT_NAME, LLM_KEY
+
+import google.generativeai as genai
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 # Playing assiatnt sound function
 import pywhatkit as kit
 import pvporcupine
@@ -23,48 +27,61 @@ from hugchat import hugchat
 con = sqlite3.connect("jarvis.db")
 cursor = con.cursor()
 
+def get_time():
+    return datetime.now().strftime("%H:%M")
+
+def get_date():
+    return datetime.now().strftime("%d %B %Y")
+
 @eel.expose
 def playAssistantSound():
     music_dir = "www\\assets\\audio\\start_sound.mp3"
     playsound(music_dir)
 
     
+
 def openCommand(query):
-    query = query.replace(ASSISTANT_NAME, "")
-    query = query.replace("open", "")
-    query.lower()
+    query = query.lower()
 
-    app_name = query.strip()
+    try:
+        # YouTube
+        if "youtube" in query:
+            speak("Opening YouTube")
+            webbrowser.open("https://www.youtube.com")
 
-    if app_name != "":
+        # Google
+        elif "google" in query:
+            speak("Opening Google")
+            webbrowser.open("https://www.google.com")
 
-        try:
-            cursor.execute(
-                'SELECT path FROM sys_command WHERE name IN (?)', (app_name,))
-            results = cursor.fetchall()
+        # Gmail
+        elif "gmail" in query:
+            speak("Opening Gmail")
+            webbrowser.open("https://mail.google.com")
 
-            if len(results) != 0:
-                speak("Opening "+query)
-                os.startfile(results[0][0])
+        # WhatsApp Web
+        elif "whatsapp" in query:
+            speak("Opening WhatsApp")
+            webbrowser.open("https://web.whatsapp.com")
 
-            elif len(results) == 0: 
-                cursor.execute(
-                'SELECT url FROM web_command WHERE name IN (?)', (app_name,))
-                results = cursor.fetchall()
-                
-                if len(results) != 0:
-                    speak("Opening "+query)
-                    webbrowser.open(results[0][0])
+        # Notepad (example app)
+        elif "notepad" in query:
+            speak("Opening Notepad")
+            os.system("notepad")
 
-                else:
-                    speak("Opening "+query)
-                    try:
-                        os.system('start '+query)
-                    except:
-                        speak("not found")
-        except:
-            speak("some thing went wrong")
+        # Calculator
+        elif "calculator" in query:
+            speak("Opening Calculator")
+            os.system("calc")
 
+        # Fallback (search anything)
+        else:
+            speak("Searching " + query)
+            webbrowser.open(f"https://www.google.com/search?q={query}")
+
+    except Exception as e:
+        print("Open error:", e)
+        speak("Unable to open")
        
 
 def PlayYoutube(query):
@@ -177,7 +194,7 @@ def whatsApp(mobile_no, message, flag, name):
 # chat bot 
 def chatBot(query):
     user_input = query.lower()
-    chatbot = hugchat.ChatBot(cookie_path="engine\cookies.json")
+    chatbot = hugchat.ChatBot(cookie_path="engine\\cookies.json")
     id = chatbot.new_conversation()
     chatbot.change_conversation(id)
     response =  chatbot.chat(user_input)
@@ -219,13 +236,13 @@ def sendMessage(message, mobileNo, name):
     tapEvents(957, 1397)
     speak("message send successfully to "+name)
 
-import google.generativeai as genai
+
 def geminai(query):
     try:
         query = query.replace(ASSISTANT_NAME, "")
         query = query.replace("search", "")
         # Set your API key
-        genai.configure(api_key=LLM_KEY)
+        genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
 
         # Select a model
         model = genai.GenerativeModel("gemini-2.5-flash")
